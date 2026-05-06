@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biotop Pets — Simulador de Receita</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --g900: #173404; --g800: #27500a; --g700: #3b6d11; --g600: #639922;
+  --g400: #97c459; --g200: #c0dd97; --g100: #daedb8; --g50: #eaf3de;
+  --s900: #181d16; --s700: #2d3328; --s500: #4a5343; --s400: #6b7563;
+  --s200: #b8c2b0; --s100: #dde4d8; --s50: #f2f5ef; --white: #ffffff;
+  --amber: #854f0b; --amber-bg: #faeeda;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px;
+}
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--s50);
+  color: var(--s900);
+  min-height: 100vh;
+  padding: 2.5rem 2rem 5rem;
+}
+header {
+  max-width: 980px; margin: 0 auto 2.5rem;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding-bottom: 1.25rem;
+  border-bottom: 1.5px solid var(--g200);
+}
+.brand-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; color: var(--g700); line-height: 1;
+}
+.brand-sub { font-size: 13px; color: var(--s400); margin-top: 5px; font-weight: 300; }
+.header-badge {
+  font-size: 11px; font-weight: 500; padding: 4px 14px;
+  background: var(--g50); color: var(--g700);
+  border: 1px solid var(--g200); border-radius: 99px;
+}
+.tabs {
+  max-width: 980px; margin: 0 auto 2rem;
+  display: flex; gap: 6px;
+}
+.tab {
+  padding: 8px 20px; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--s100); border-radius: 99px;
+  background: var(--white); color: var(--s500);
+  cursor: pointer; transition: all .15s; user-select: none;
+}
+.tab:hover { border-color: var(--g400); color: var(--g700); }
+.tab.active { background: var(--g700); color: var(--white); border-color: var(--g700); }
+.panel { max-width: 980px; margin: 0 auto; display: none; }
+.panel.active { display: block; }
+.sec-label {
+  font-size: 10px; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--s400);
+  margin-bottom: .75rem; margin-top: 2rem;
+}
+.sec-label:first-child { margin-top: 0; }
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px; margin-bottom: .5rem;
+}
+.card {
+  background: var(--white); border: 1px solid var(--s100);
+  border-radius: var(--r-lg); padding: 1rem 1.1rem;
+}
+.card.green { background: var(--g50); border-color: var(--g100); }
+.card-label { font-size: 11px; color: var(--s400); margin-bottom: 4px; }
+.card-value { font-size: 21px; font-weight: 500; color: var(--s900); }
+.card.green .card-value { color: var(--g700); }
+.card-sub { font-size: 11px; color: var(--s400); margin-top: 3px; }
+.slider-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 14px; background: var(--white);
+  border: 1px solid var(--s100); border-radius: var(--r-md);
+  margin-bottom: 6px;
+}
+.slider-row label { font-size: 13px; color: var(--s500); min-width: 200px; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--g600); cursor: pointer; }
+.slider-val { font-size: 13px; font-weight: 500; color: var(--s900); min-width: 90px; text-align: right; }
+.result-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-top: 1rem;
+}
+.result-block {
+  background: var(--white); border: 1px solid var(--s100);
+  border-radius: var(--r-lg); padding: 1.1rem 1.25rem;
+}
+.rb-label { font-size: 11px; color: var(--s400); margin-bottom: 3px; }
+.rb-value { font-size: 26px; font-weight: 500; color: var(--s900); }
+.rb-value.green { color: var(--g700); }
+.rb-sub { font-size: 11px; color: var(--s400); margin-top: 4px; }
+.breakdown {
+  background: var(--white); border: 1px solid var(--s100);
+  border-radius: var(--r-lg); padding: 1rem 1.25rem; margin-top: 10px;
+}
+.bk-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; font-size: 13px;
+  border-bottom: 1px solid var(--s50);
+}
+.bk-row:last-child { border-bottom: none; font-weight: 500; font-size: 14px; }
+.bk-row .bk-l { color: var(--s500); }
+.bk-row .bk-v { color: var(--s900); }
+.bk-row.total .bk-l, .bk-row.total .bk-v { color: var(--g700); }
+.note { font-size: 12px; color: var(--s400); margin-top: .75rem; padding-left: 2px; }
+.chart-wrap {
+  background: var(--white); border: 1px solid var(--s100);
+  border-radius: var(--r-lg); padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+.chart-legend {
+  display: flex; gap: 20px; margin-bottom: .75rem;
+  font-size: 12px; color: var(--s500);
+}
+.chart-legend span { display: flex; align-items: center; gap: 6px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+hr { border: none; border-top: 1px solid var(--s100); margin: 1.75rem 0; }
+.base-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .75rem;
+}
+.base-title { font-size: 15px; font-weight: 500; }
+.base-count {
+  font-size: 12px; padding: 3px 12px;
+  background: var(--g50); color: var(--g700);
+  border-radius: 99px; border: 1px solid var(--g100);
+}
+.table-wrap {
+  background: var(--white); border: 1px solid var(--s100);
+  border-radius: var(--r-lg); overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: var(--s50); }
+th {
+  text-align: left; padding: 10px 14px;
+  font-size: 10px; font-weight: 500; color: var(--s400);
+  letter-spacing: .06em; text-transform: uppercase;
+  border-bottom: 1px solid var(--s100);
+}
+td {
+  padding: 9px 14px; border-bottom: 1px solid var(--s50);
+  color: var(--s700); vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--s50); }
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 500;
+  padding: 2px 9px; border-radius: 99px;
+}
+.r-abc  { background: #dbeafe; color: #1e40af; }
+.r-gru  { background: #ede9fe; color: #5b21b6; }
+.r-osa  { background: #fce7f3; color: #9d174d; }
+.r-arj  { background: var(--g50); color: var(--g700); }
+.r-cap  { background: #fff3cd; color: #856404; }
+.c-cli  { background: #e0f2fe; color: #0369a1; }
+.c-pet  { background: #fdf4ff; color: #7e22ce; }
+.c-dis  { background: #fff7ed; color: #c2410c; }
+.c-nut  { background: var(--g50); color: var(--g700); }
+.c-pro  { background: var(--amber-bg); color: var(--amber); }
+.c-out  { background: var(--s50); color: var(--s500); }
+.cx-input {
+  width: 58px; padding: 4px 8px; font-size: 13px;
+  border: 1px solid var(--s100); border-radius: var(--r-sm);
+  text-align: center; color: var(--s900);
+  background: var(--s50); font-family: 'DM Sans', sans-serif;
+}
+.cx-input:focus { outline: none; border-color: var(--g400); background: var(--white); }
+.cx-input:disabled { opacity: .35; cursor: not-allowed; }
+.rec-cell { font-weight: 500; color: var(--g700); }
+.check-cell { text-align: center; cursor: pointer; font-size: 17px; user-select: none; color: var(--s400); }
+.check-cell.on { color: var(--g700); }
+.totals-bar {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 10px; margin-top: 1rem;
+}
+.tot-card {
+  background: var(--white); border: 1px solid var(--s100);
+  border-radius: var(--r-md); padding: .85rem 1rem;
+}
+.tot-label { font-size: 11px; color: var(--s400); margin-bottom: 3px; }
+.tot-value { font-size: 18px; font-weight: 500; color: var(--s900); }
+.tot-value.green { color: var(--g700); }
+footer {
+  max-width: 980px; margin: 3rem auto 0;
+  font-size: 11px; color: var(--s200); text-align: right;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand-title">Biotop Pets</div>
+    <div class="brand-sub">Simulador de receita e projeção por base de clientes</div>
+  </div>
+  <div class="header-badge">Tacto Biotecnologia</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('sim')">Simulador geral</div>
+  <div class="tab" onclick="switchTab('sp')">Base Grande SP</div>
+
+</div>
+
+<!-- ═══════ PAINEL 1: SIMULADOR ═══════ -->
+<div class="panel active" id="panel-sim">
+
+  <div class="sec-label">Premissas do lote — 300 kg (mínimo técnico)</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Lote mínimo</div>
+      <div class="card-value">300 kg</div>
+      <div class="card-sub">↑ revisado de 180 kg</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Caixas produzidas</div>
+      <div class="card-value">250</div>
+      <div class="card-sub">12 potes × 100 g</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Custo total estimado</div>
+      <div class="card-value">R$ 16.008</div>
+      <div class="card-sub">proporcional ao lote</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Custo por caixa</div>
+      <div class="card-value">R$ 64,04</div>
+      <div class="card-sub">base unitária</div>
+    </div>
+    <div class="card green">
+      <div class="card-label">Preço de venda</div>
+      <div class="card-value">R$ 504</div>
+      <div class="card-sub">por caixa ao revendedor</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Margem bruta alvo</div>
+      <div class="card-value">87%</div>
+      <div class="card-sub">ICMS 18% sobre margem</div>
+    </div>
+  </div>
+
+  <hr>
+  <div class="sec-label">Projeção de receita — ajuste os parâmetros</div>
+
+  <div class="slider-row">
+    <label>Clientes prospectados</label>
+    <input type="range" min="1" max="100" value="30" step="1" id="s-cli" oninput="calc()">
+    <span class="slider-val" id="o-cli">30 clientes</span>
+  </div>
+  <div class="slider-row">
+    <label>Taxa de conversão</label>
+    <input type="range" min="5" max="80" value="30" step="1" id="s-conv" oninput="calc()">
+    <span class="slider-val" id="o-conv">30%</span>
+  </div>
+  <div class="slider-row">
+    <label>Caixas por cliente / mês</label>
+    <input type="range" min="1" max="20" value="3" step="1" id="s-cx" oninput="calc()">
+    <span class="slider-val" id="o-cx">3 cx</span>
+  </div>
+  <div class="slider-row">
+    <label>Preço de venda por caixa (R$)</label>
+    <input type="range" min="400" max="700" value="504" step="1" id="s-preco" oninput="calc()">
+    <span class="slider-val" id="o-preco">R$ 504</span>
+  </div>
+
+  <div class="result-grid">
+    <div class="result-block">
+      <div class="rb-label">Clientes convertidos</div>
+      <div class="rb-value" id="r-cli">9</div>
+      <div class="rb-sub">de <span id="r-cli-tot">30</span> prospectados</div>
+    </div>
+    <div class="result-block">
+      <div class="rb-label">Caixas vendidas / mês</div>
+      <div class="rb-value" id="r-cx">27</div>
+      <div class="rb-sub" id="r-lote">10,8% do lote de 250</div>
+    </div>
+    <div class="result-block">
+      <div class="rb-label">Receita bruta / mês</div>
+      <div class="rb-value green" id="r-rec">R$ 13.608</div>
+      <div class="rb-sub" id="r-rec-ano">R$ 163.296 / ano</div>
+    </div>
+    <div class="result-block">
+      <div class="rb-label">Resultado líquido / mês</div>
+      <div class="rb-value green" id="r-liq">R$ 9.562</div>
+      <div class="rb-sub">após ICMS 18% sobre margem</div>
+    </div>
+  </div>
+
+  <div class="breakdown">
+    <div class="bk-row">
+      <span class="bk-l">Receita bruta</span>
+      <span class="bk-v" id="bk-rec">—</span>
+    </div>
+    <div class="bk-row">
+      <span class="bk-l">(-) Custo das caixas vendidas</span>
+      <span class="bk-v" id="bk-cust">—</span>
+    </div>
+    <div class="bk-row">
+      <span class="bk-l">(-) ICMS — 18% sobre margem</span>
+      <span class="bk-v" id="bk-icms">—</span>
+    </div>
+    <div class="bk-row total">
+      <span class="bk-l">= Resultado líquido / mês</span>
+      <span class="bk-v" id="bk-liq">—</span>
+    </div>
+  </div>
+
+  <p class="note">Com essa projeção, o lote de 250 caixas será esgotado em aprox. <strong id="n-meses">—</strong>.</p>
+
+  <div class="chart-wrap">
+    <div class="chart-legend">
+      <span><span class="leg-dot" style="background:#c0dd97"></span>Receita bruta acumulada</span>
+      <span><span class="leg-dot" style="background:#3b6d11; border-radius:50%"></span>Resultado líquido acumulado</span>
+    </div>
+    <div style="position:relative; height:200px;">
+      <canvas id="chart1" role="img" aria-label="Gráfico de receita bruta e resultado líquido acumulados em 12 meses">Projeção de receita acumulada 12 meses.</canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ PAINEL 2: GRANDE SP ═══════ -->
+<div class="panel" id="panel-sp">
+
+  <div class="sec-label">Base Grande SP — Clínicas e canais prospectados</div>
+  <div class="base-header">
+    <div class="base-title">Clínicas e canais — Grande São Paulo</div>
+    <div class="base-count" id="sp-count">35 estabelecimentos</div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px"></th>
+          <th>Estabelecimento</th>
+          <th>Região</th>
+          <th>Canal</th>
+          <th>Cx / mês</th>
+          <th>Receita mensal</th>
+        </tr>
+      </thead>
+      <tbody id="sp-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="totals-bar">
+    <div class="tot-card">
+      <div class="tot-label">Ativos selecionados</div>
+      <div class="tot-value" id="sp-t-cli">—</div>
+    </div>
+    <div class="tot-card">
+      <div class="tot-label">Total cx / mês</div>
+      <div class="tot-value" id="sp-t-cx">—</div>
+    </div>
+    <div class="tot-card">
+      <div class="tot-label">Receita bruta / mês</div>
+      <div class="tot-value green" id="sp-t-rec">—</div>
+    </div>
+    <div class="tot-card">
+      <div class="tot-label">Resultado líquido / mês</div>
+      <div class="tot-value green" id="sp-t-liq">—</div>
+    </div>
+  </div>
+</div>
+
+
+
+<footer>Tacto Biotecnologia e Agropecuária · Biotop Pets · Projeção interna</footer>
+
+<script>
+const CUSTO = 64.04;
+const ICMS  = 0.18;
+const PRECO = 504;
+const LOTE  = 250;
+
+function fmt(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+
+function switchTab(id) {
+  ['sim','sp'].forEach((t,i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t === id);
+    document.getElementById('panel-' + t).classList.toggle('active', t === id);
+  });
+}
+
+// ── SIMULATOR ──────────────────────────────────────────────────────
+let chart1 = null;
+function calc() {
+  const cli   = +document.getElementById('s-cli').value;
+  const conv  = +document.getElementById('s-conv').value / 100;
+  const cx    = +document.getElementById('s-cx').value;
+  const preco = +document.getElementById('s-preco').value;
+
+  const convertidos = Math.round(cli * conv);
+  const cxMes  = convertidos * cx;
+  const rec    = cxMes * preco;
+  const custo  = cxMes * CUSTO;
+  const margem = rec - custo;
+  const icms   = margem * ICMS;
+  const liq    = margem - icms;
+  const meses  = cxMes > 0 ? (LOTE / cxMes).toFixed(1) + ' meses' : '∞';
+  const pctLote = cxMes > 0 ? Math.min(100, Math.round(cxMes / LOTE * 100)) : 0;
+
+  document.getElementById('o-cli').textContent   = cli + ' clientes';
+  document.getElementById('o-conv').textContent  = Math.round(conv * 100) + '%';
+  document.getElementById('o-cx').textContent    = cx + ' cx';
+  document.getElementById('o-preco').textContent = 'R$ ' + preco;
+
+  document.getElementById('r-cli').textContent     = convertidos;
+  document.getElementById('r-cli-tot').textContent = cli;
+  document.getElementById('r-cx').textContent      = cxMes;
+  document.getElementById('r-lote').textContent    = pctLote + '% do lote de 250';
+  document.getElementById('r-rec').textContent     = fmt(rec);
+  document.getElementById('r-rec-ano').textContent = fmt(rec * 12) + ' / ano';
+  document.getElementById('r-liq').textContent     = fmt(liq);
+  document.getElementById('bk-rec').textContent    = fmt(rec);
+  document.getElementById('bk-cust').textContent   = '- ' + fmt(custo);
+  document.getElementById('bk-icms').textContent   = '- ' + fmt(icms);
+  document.getElementById('bk-liq').textContent    = fmt(liq);
+  document.getElementById('n-meses').textContent   = meses;
+
+  const labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const bArr = labels.map((_,i) => Math.round(rec * (i+1)));
+  const lArr = labels.map((_,i) => Math.round(liq * (i+1)));
+
+  if (chart1) {
+    chart1.data.datasets[0].data = bArr;
+    chart1.data.datasets[1].data = lArr;
+    chart1.update();
+  } else {
+    chart1 = new Chart(document.getElementById('chart1'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Receita bruta acum.', data: bArr,
+            backgroundColor: '#c0dd97', borderRadius: 4, order: 2 },
+          { label: 'Resultado líquido acum.', data: lArr,
+            type: 'line', borderColor: '#3b6d11', backgroundColor: 'transparent',
+            borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#3b6d11', order: 1 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.parsed.y) } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#6b7563' } },
+          y: { ticks: { font: { size: 11 }, color: '#6b7563',
+            callback: v => 'R$ ' + (v/1000).toFixed(0) + 'k' } }
+        }
+      }
+    });
+  }
+}
+
+// ── SP DATA ────────────────────────────────────────────────────────
+const spData = [
+  { nome: 'Clínica Vet ABC Centro',      reg: 'ABC',           rCls: 'r-abc', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: true  },
+  { nome: 'PetLife Santo André',         reg: 'ABC',           rCls: 'r-abc', canal: 'Pet shop',     cCls: 'c-pet', cx: 2, on: true  },
+  { nome: 'Vet Animal Mauá',             reg: 'ABC',           rCls: 'r-abc', canal: 'Clínica vet.', cCls: 'c-cli', cx: 2, on: true  },
+  { nome: 'Clínica São Caetano',         reg: 'ABC',           rCls: 'r-abc', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: false },
+  { nome: 'VetCare São Bernardo',        reg: 'ABC',           rCls: 'r-abc', canal: 'Clínica vet.', cCls: 'c-cli', cx: 4, on: true  },
+  { nome: 'PetShop Ribeirão Pires',      reg: 'ABC',           rCls: 'r-abc', canal: 'Pet shop',     cCls: 'c-pet', cx: 2, on: false },
+  { nome: 'Vet Norte Guarulhos',         reg: 'Guarulhos',     rCls: 'r-gru', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: true  },
+  { nome: 'PetCenter Guarulhos',         reg: 'Guarulhos',     rCls: 'r-gru', canal: 'Pet shop',     cCls: 'c-pet', cx: 3, on: true  },
+  { nome: 'Animal Hospital GRU',         reg: 'Guarulhos',     rCls: 'r-gru', canal: 'Clínica vet.', cCls: 'c-cli', cx: 4, on: true  },
+  { nome: 'PetAmigos Guarulhos',         reg: 'Guarulhos',     rCls: 'r-gru', canal: 'Pet shop',     cCls: 'c-pet', cx: 2, on: true  },
+  { nome: 'Clínica Vet GRU Gold',        reg: 'Guarulhos',     rCls: 'r-gru', canal: 'Clínica vet.', cCls: 'c-cli', cx: 2, on: false },
+  { nome: 'Clínica Vet Osasco',          reg: 'Osasco',        rCls: 'r-osa', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: true  },
+  { nome: 'PetMundo Osasco',             reg: 'Osasco',        rCls: 'r-osa', canal: 'Pet shop',     cCls: 'c-pet', cx: 2, on: true  },
+  { nome: 'PetLife Barueri',             reg: 'Osasco',        rCls: 'r-osa', canal: 'Pet shop',     cCls: 'c-pet', cx: 3, on: true  },
+  { nome: 'Animal Clinic Osasco',        reg: 'Osasco',        rCls: 'r-osa', canal: 'Clínica vet.', cCls: 'c-cli', cx: 2, on: true  },
+  { nome: 'Vet Carapicuíba',            reg: 'Osasco',        rCls: 'r-osa', canal: 'Clínica vet.', cCls: 'c-cli', cx: 2, on: false },
+  { nome: 'VetBem Arujá',               reg: 'Arujá / Região',rCls: 'r-arj', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: true  },
+  { nome: 'PetShop Santa Isabel',        reg: 'Arujá / Região',rCls: 'r-arj', canal: 'Pet shop',     cCls: 'c-pet', cx: 2, on: true  },
+  { nome: 'Clínica Vet Itaquaquecetuba', reg: 'Arujá / Região',rCls: 'r-arj', canal: 'Clínica vet.', cCls: 'c-cli', cx: 2, on: true  },
+  { nome: 'VetSaúde Suzano',            reg: 'Arujá / Região',rCls: 'r-arj', canal: 'Clínica vet.', cCls: 'c-cli', cx: 2, on: true  },
+  { nome: 'Animal Care Mogi',            reg: 'Arujá / Região',rCls: 'r-arj', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: false },
+  { nome: 'PetAmigos Guararema',         reg: 'Arujá / Região',rCls: 'r-arj', canal: 'Pet shop',     cCls: 'c-pet', cx: 1, on: false },
+  { nome: 'Clínica Vet Pinheiros',       reg: 'Capital SP',    rCls: 'r-cap', canal: 'Clínica vet.', cCls: 'c-cli', cx: 5, on: true  },
+  { nome: 'VetCare Vila Madalena',       reg: 'Capital SP',    rCls: 'r-cap', canal: 'Clínica vet.', cCls: 'c-cli', cx: 4, on: true  },
+  { nome: 'PetShop Moema',               reg: 'Capital SP',    rCls: 'r-cap', canal: 'Pet shop',     cCls: 'c-pet', cx: 3, on: true  },
+  { nome: 'Clínica Animal Itaim',        reg: 'Capital SP',    rCls: 'r-cap', canal: 'Clínica vet.', cCls: 'c-cli', cx: 4, on: true  },
+  { nome: 'PetCenter Tatuapé',           reg: 'Capital SP',    rCls: 'r-cap', canal: 'Pet shop',     cCls: 'c-pet', cx: 3, on: true  },
+  { nome: 'Clínica Vet Lapa',            reg: 'Capital SP',    rCls: 'r-cap', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: true  },
+  { nome: 'VetBem Higienópolis',         reg: 'Capital SP',    rCls: 'r-cap', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: true  },
+  { nome: 'PetAmigos Santana',           reg: 'Capital SP',    rCls: 'r-cap', canal: 'Pet shop',     cCls: 'c-pet', cx: 2, on: true  },
+  { nome: 'VetHouse Brooklin',           reg: 'Capital SP',    rCls: 'r-cap', canal: 'Clínica vet.', cCls: 'c-cli', cx: 3, on: false },
+  { nome: 'Animal Care Perdizes',        reg: 'Capital SP',    rCls: 'r-cap', canal: 'Clínica vet.', cCls: 'c-cli', cx: 2, on: false },
+];
+
+function renderSP() {
+  const tbody = document.getElementById('sp-tbody');
+  tbody.innerHTML = '';
+  spData.forEach((r, i) => {
+    const rec = r.on ? r.cx * PRECO : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td class="check-cell ${r.on ? 'on' : ''}" onclick="toggleSP(${i})">${r.on ? '✓' : '○'}</td>` +
+      `<td>${r.nome}</td>` +
+      `<td><span class="badge ${r.rCls}">${r.reg}</span></td>` +
+      `<td><span class="badge ${r.cCls}">${r.canal}</span></td>` +
+      `<td><input class="cx-input" type="number" min="1" max="30" value="${r.cx}" ${r.on ? '' : 'disabled'} oninput="spData[${i}].cx=+this.value;renderSPTotals();"></td>` +
+      `<td class="rec-cell">${r.on ? fmt(rec) : '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('sp-count').textContent = spData.length + ' estabelecimentos';
+  renderSPTotals();
+}
+function toggleSP(i) { spData[i].on = !spData[i].on; renderSP(); }
+function renderSPTotals() {
+  const at = spData.filter(r => r.on);
+  const cx = at.reduce((s,r) => s + r.cx, 0);
+  const rec = cx * PRECO, mg = rec - cx * CUSTO, liq = mg - mg * ICMS;
+  document.getElementById('sp-t-cli').textContent = at.length;
+  document.getElementById('sp-t-cx').textContent  = cx + ' cx';
+  document.getElementById('sp-t-rec').textContent = fmt(rec);
+  document.getElementById('sp-t-liq').textContent = fmt(liq);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────
+calc();
+renderSP();
+</script>
+</body>
+</html>
